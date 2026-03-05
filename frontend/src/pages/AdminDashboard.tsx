@@ -57,6 +57,17 @@ interface Log {
   created_at: string;
 }
 
+interface ChartDataPoint {
+  date: string;
+  count: number;
+}
+
+interface ChartData {
+  daily_registrations: ChartDataPoint[];
+  daily_uploads: ChartDataPoint[];
+  file_type_distribution: Record<string, number>;
+}
+
 const CHART_COLORS = ['#0ea5e9', '#d946ef', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 function AdminStat({ icon: Icon, label, value, sub, color, change }: {
@@ -87,7 +98,11 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [chartData, setChartData] = useState<{ daily_registrations: unknown[]; daily_uploads: unknown[]; file_type_distribution: unknown[] }>({ daily_registrations: [], daily_uploads: [], file_type_distribution: {} });
+  const [chartData, setChartData] = useState<ChartData>({ 
+    daily_registrations: [], 
+    daily_uploads: [], 
+    file_type_distribution: {} 
+  });
   const [users, setUsers] = useState<User[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
@@ -114,12 +129,12 @@ export default function AdminDashboard() {
       ]);
       setStats(statsRes.data);
       setChartData(chartRes.data);
-      setUsers(usersRes.data.users);
-      setDocuments(docsRes.data.documents);
-      setLogs(logsRes.data.logs);
+      setUsers(usersRes.data.users || []);
+      setDocuments(docsRes.data.documents || []);
+      setLogs(logsRes.data.logs || []);
       setLastRefresh(new Date());
-    } catch {
-      // ignore
+    } catch (error) {
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
@@ -177,7 +192,6 @@ export default function AdminDashboard() {
     value: count as number
   }));
 
-  // tabs is used in the sidebar navigation
   const tabs = ['overview', 'users', 'documents', 'logs', 'charts'];
 
   return (
@@ -287,13 +301,13 @@ export default function AdminDashboard() {
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {/* Daily Registrations + Uploads */}
+              {/* Daily Registrations */}
               <div className="xl:col-span-2 glass-card p-5 rounded-2xl">
                 <h3 className="font-bold text-white mb-4 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary-400" /> 7-Day Activity
                 </h3>
                 <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={chartData.daily_registrations as Array<{ date: string; count: number }>}>
+                  <LineChart data={chartData.daily_registrations}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e2d4a" />
                     <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5)} />
                     <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
@@ -337,7 +351,7 @@ export default function AdminDashboard() {
                 <BarChart3 className="w-4 h-4 text-green-400" /> Daily Uploads (Last 7 Days)
               </h3>
               <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={chartData.daily_uploads as Array<{ date: string; count: number }>}>
+                <BarChart data={chartData.daily_uploads}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e2d4a" />
                   <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5)} />
                   <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
@@ -582,7 +596,7 @@ export default function AdminDashboard() {
               <div className="glass-card p-5 rounded-2xl">
                 <h3 className="font-bold text-white mb-4">Daily Registrations</h3>
                 <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={chartData.daily_registrations as Array<{ date: string; count: number }>}>
+                  <LineChart data={chartData.daily_registrations}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e2d4a" />
                     <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5)} />
                     <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
@@ -595,7 +609,7 @@ export default function AdminDashboard() {
               <div className="glass-card p-5 rounded-2xl">
                 <h3 className="font-bold text-white mb-4">Daily Uploads</h3>
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={chartData.daily_uploads as Array<{ date: string; count: number }>}>
+                  <BarChart data={chartData.daily_uploads}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e2d4a" />
                     <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5)} />
                     <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
@@ -648,7 +662,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     e.preventDefault();
     setLoading(true);
     try {
-      // First create the user without password
+      // Create user without password first
       const response = await adminAPI.createUser({
         full_name: form.full_name,
         username: form.username,
@@ -657,11 +671,10 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         role: form.role as 'user' | 'admin'
       });
       
-      // Then set the password using the reset password endpoint
-      // Note: You need to get the user ID from the response
-      // This assumes the response contains the created user with an id
+      // Get user ID from response
       const userId = response.data.user?.id || response.data.id;
       
+      // Set password if user was created successfully
       if (userId && form.password) {
         await adminAPI.resetUserPassword(userId, form.password);
       }
