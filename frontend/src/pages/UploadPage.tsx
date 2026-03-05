@@ -7,35 +7,40 @@ import {
   Shield, Upload, FileText, Image, File, X, Lock,
   Eye, Download, Printer, Smartphone, Monitor, Globe,
   Calendar, Hash, Tag, Check
-} from 'lucide-react';  // Removed: AlignLeft, ChevronDown
+} from 'lucide-react';
 import { documentsAPI } from '../lib/api';
 import toast from 'react-hot-toast';
+// import { useAuth } from '../context/AuthContext'; // Comment out if not used
 
-// Remove the unused 'user' import from useAuth if not needed
-// If you need it later, uncomment, otherwise remove:
-// import { useAuth } from '../context/AuthContext';
+// ... rest of the imports
 
+export default function UploadPage() {
+  const navigate = useNavigate();
+  // const { user } = useAuth(); // Comment out if not used
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [formData, setFormData] = useState<UploadFormData>({
+    title: '',
+    description: '',
+    category: '',
+    tags: '',
+    expiry_option: '7days',
+    custom_expiry_days: '',
+    view_limit_option: 'unlimited',
+    custom_view_limit: '',
+    password: '',
+    confirm_password: '',
+    device_restriction: 'both',
+    allow_download: true,
+    allow_print: true,
+    allow_share: true,
+    watermark_enabled: false,
+    password_enabled: false,
+  });
 
+  // ... rest of the component remains the same
 
-
-interface UploadFormData {
-  title: string;
-  description: string;
-  category: string;
-  tags: string;
-  expiry_option: string;
-  custom_expiry_days: string;
-  view_limit_option: string;
-  custom_view_limit: string;
-  password: string;
-  confirm_password: string;
-  device_restriction: string;
-  allow_download: boolean;
-  allow_print: boolean;
-  allow_share: boolean;
-  watermark_enabled: boolean;
-  password_enabled: boolean;
-}
 
 function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label?: string }) {
   return (
