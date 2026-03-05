@@ -1,10 +1,18 @@
+// src/pages/UploadSuccessPage.tsx
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Check, Copy, FileText, Eye, Download, Printer, Globe, Clock, Hash, Share2, ExternalLink, Upload } from 'lucide-react';
+import {
+  Shield, Check, Copy, FileText, Eye, Download, Printer,
+  Clock, Hash, Share2, ExternalLink, Upload
+} from 'lucide-react';  // Removed: Globe
 import { useState } from 'react';
 import { type Document } from '../lib/api';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';  // Removed: format
 import toast from 'react-hot-toast';
+
+// ... rest of the file remains the same
+
+
 
 function formatFileSize(bytes: number) {
   if (!bytes) return '0 B';
