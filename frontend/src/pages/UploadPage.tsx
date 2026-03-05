@@ -1,3 +1,4 @@
+// src/pages/UploadPage.tsx
 import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
@@ -5,11 +6,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Upload, FileText, Image, File, X, Lock,
   Eye, Download, Printer, Smartphone, Monitor, Globe,
-  Calendar, Hash, Tag, AlignLeft, ChevronDown, Check
-} from 'lucide-react';
+  Calendar, Hash, Tag, Check
+} from 'lucide-react';  // Removed: AlignLeft, ChevronDown
 import { documentsAPI } from '../lib/api';
 import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
+
+// Remove the unused 'user' import from useAuth if not needed
+// If you need it later, uncomment, otherwise remove:
+// import { useAuth } from '../context/AuthContext';
+
+
+
 
 interface UploadFormData {
   title: string;
