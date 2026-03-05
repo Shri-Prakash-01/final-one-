@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Shield, Users, FileText, Activity, Eye, Download,
+  Shield, Users, FileText, Activity, Eye,
   TrendingUp, TrendingDown, RefreshCw, Plus, LogOut,
-  User, Settings, BarChart3, Trash2, Ban, CheckCircle,
-  AlertTriangle, Search, ChevronRight, Clock, Database
-} from 'lucide-react';
+  User, BarChart3, Trash2, Ban, CheckCircle,
+  Search, Clock, Database
+} from 'lucide-react';  // Removed: Download, Settings, AlertTriangle, ChevronRight
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -21,6 +21,40 @@ interface AdminStats {
   documents: { total: number; active: number; today_uploads: number; yesterday_uploads: number; upload_change_percent: number };
   activity: { total_views: number; total_downloads: number; today_logins: number };
   file_type_distribution: Record<string, number>;
+}
+
+interface User {
+  id: string;
+  full_name: string;
+  username: string;
+  email: string;
+  role: string;
+  document_count: number;
+  created_at: string;
+  is_active: boolean;
+}
+
+interface Document {
+  id: string;
+  title: string;
+  original_filename: string;
+  owner_name: string;
+  file_type: string;
+  file_size: number;
+  current_views: number;
+  status: string;
+}
+
+interface Log {
+  id: string;
+  user_name: string;
+  document_name: string;
+  action: string;
+  device_type: string;
+  browser: string;
+  ip_address: string;
+  status: string;
+  created_at: string;
 }
 
 const CHART_COLORS = ['#0ea5e9', '#d946ef', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -54,9 +88,9 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [chartData, setChartData] = useState<{ daily_registrations: unknown[]; daily_uploads: unknown[]; file_type_distribution: unknown[] }>({ daily_registrations: [], daily_uploads: [], file_type_distribution: [] });
-  const [users, setUsers] = useState<unknown[]>([]);
-  const [documents, setDocuments] = useState<unknown[]>([]);
-  const [logs, setLogs] = useState<unknown[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [activeTab, setActiveTab] = useState('overview');
@@ -84,8 +118,11 @@ export default function AdminDashboard() {
       setDocuments(docsRes.data.documents);
       setLogs(logsRes.data.logs);
       setLastRefresh(new Date());
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSuspendUser = async (userId: string) => {
@@ -93,7 +130,9 @@ export default function AdminDashboard() {
       await adminAPI.suspendUser(userId);
       toast.success('User suspended');
       loadData();
-    } catch { toast.error('Failed to suspend user'); }
+    } catch {
+      toast.error('Failed to suspend user');
+    }
   };
 
   const handleActivateUser = async (userId: string) => {
@@ -101,7 +140,9 @@ export default function AdminDashboard() {
       await adminAPI.activateUser(userId);
       toast.success('User activated');
       loadData();
-    } catch { toast.error('Failed to activate user'); }
+    } catch {
+      toast.error('Failed to activate user');
+    }
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -110,7 +151,9 @@ export default function AdminDashboard() {
       await adminAPI.deleteUser(userId);
       toast.success('User deleted');
       loadData();
-    } catch { toast.error('Failed to delete user'); }
+    } catch {
+      toast.error('Failed to delete user');
+    }
   };
 
   const handleDeleteDoc = async (docId: string) => {
@@ -119,7 +162,9 @@ export default function AdminDashboard() {
       await adminAPI.deleteDocument(docId);
       toast.success('Document deleted');
       loadData();
-    } catch { toast.error('Failed to delete document'); }
+    } catch {
+      toast.error('Failed to delete document');
+    }
   };
 
   const handleLogout = async () => {
@@ -129,9 +174,10 @@ export default function AdminDashboard() {
 
   const pieData = Object.entries(chartData.file_type_distribution || {}).map(([type, count]) => ({
     name: type.toUpperCase(),
-    value: count
+    value: count as number
   }));
 
+  // tabs is used in the sidebar navigation
   const tabs = ['overview', 'users', 'documents', 'logs', 'charts'];
 
   return (
@@ -151,22 +197,33 @@ export default function AdminDashboard() {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {[
-            { id: 'overview', icon: TrendingUp, label: 'Overview' },
-            { id: 'users', icon: Users, label: 'Manage Users' },
-            { id: 'documents', icon: FileText, label: 'Documents' },
-            { id: 'logs', icon: Activity, label: 'Activity Logs' },
-            { id: 'charts', icon: BarChart3, label: 'Analytics' },
-          ].map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`sidebar-item w-full text-left ${activeTab === item.id ? 'active' : ''}`}
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </button>
-          ))}
+          {tabs.map(tab => {
+            const icons = {
+              overview: TrendingUp,
+              users: Users,
+              documents: FileText,
+              logs: Activity,
+              charts: BarChart3
+            };
+            const labels = {
+              overview: 'Overview',
+              users: 'Manage Users',
+              documents: 'Documents',
+              logs: 'Activity Logs',
+              charts: 'Analytics'
+            };
+            const Icon = icons[tab as keyof typeof icons];
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`sidebar-item w-full text-left ${activeTab === tab ? 'active' : ''}`}
+              >
+                <Icon className="w-4 h-4" />
+                {labels[tab as keyof typeof labels]}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="p-4 border-t border-vault-border/50">
@@ -302,7 +359,7 @@ export default function AdminDashboard() {
                       <tr><th>User</th><th>Joined</th><th>Status</th></tr>
                     </thead>
                     <tbody>
-                      {(users as Array<{ id: string; full_name: string; email: string; created_at: string; is_active: boolean }>).slice(0, 5).map((u) => (
+                      {users.slice(0, 5).map((u) => (
                         <tr key={u.id}>
                           <td>
                             <div className="text-white text-sm font-medium">{u.full_name}</div>
@@ -331,7 +388,7 @@ export default function AdminDashboard() {
                       <tr><th>Document</th><th>Type</th><th>Views</th></tr>
                     </thead>
                     <tbody>
-                      {(documents as Array<{ id: string; title: string; owner_name: string; file_type: string; current_views: number }>).slice(0, 5).map((d) => (
+                      {documents.slice(0, 5).map((d) => (
                         <tr key={d.id}>
                           <td>
                             <div className="text-white text-sm font-medium">{d.title}</div>
@@ -355,7 +412,7 @@ export default function AdminDashboard() {
             <div className="p-6 border-b border-vault-border/50 flex items-center gap-4">
               <div>
                 <h2 className="text-xl font-bold text-white">User Management</h2>
-                <p className="text-sm text-vault-text mt-1">{(users as unknown[]).length} users</p>
+                <p className="text-sm text-vault-text mt-1">{users.length} users</p>
               </div>
               <div className="relative flex-1 max-w-xs ml-auto">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-vault-text" />
@@ -372,7 +429,7 @@ export default function AdminDashboard() {
                   <tr><th>User</th><th>Email</th><th>Role</th><th>Docs</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
-                  {(users as Array<{ id: string; full_name: string; username: string; email: string; role: string; document_count: number; created_at: string; is_active: boolean }>)
+                  {users
                     .filter(u => !searchUsers || u.full_name.toLowerCase().includes(searchUsers.toLowerCase()) || u.email.toLowerCase().includes(searchUsers.toLowerCase()))
                     .map((u) => (
                     <tr key={u.id}>
@@ -436,7 +493,7 @@ export default function AdminDashboard() {
           <div className="glass-card rounded-2xl overflow-hidden">
             <div className="p-6 border-b border-vault-border/50">
               <h2 className="text-xl font-bold text-white">Document Management</h2>
-              <p className="text-sm text-vault-text mt-1">{(documents as unknown[]).length} documents</p>
+              <p className="text-sm text-vault-text mt-1">{documents.length} documents</p>
             </div>
             <div className="overflow-x-auto">
               <table className="vault-table">
@@ -444,7 +501,7 @@ export default function AdminDashboard() {
                   <tr><th>Document</th><th>Owner</th><th>Type</th><th>Size</th><th>Views</th><th>Status</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
-                  {(documents as Array<{ id: string; title: string; original_filename: string; owner_name: string; file_type: string; file_size: number; current_views: number; status: string }>).map((doc) => (
+                  {documents.map((doc) => (
                     <tr key={doc.id}>
                       <td>
                         <div className="text-white text-sm font-medium">{doc.title}</div>
@@ -490,7 +547,7 @@ export default function AdminDashboard() {
                   <tr><th>User</th><th>Document</th><th>Action</th><th>Device</th><th>IP</th><th>Status</th><th>Time</th></tr>
                 </thead>
                 <tbody>
-                  {(logs as Array<{ id: string; user_name: string; document_name: string; action: string; device_type: string; browser: string; ip_address: string; status: string; created_at: string }>).map((log) => (
+                  {logs.map((log) => (
                     <tr key={log.id}>
                       <td className="text-white text-sm">{log.user_name || 'Anonymous'}</td>
                       <td className="text-sm">{log.document_name || '-'}</td>
@@ -583,7 +640,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     e.preventDefault();
     setLoading(true);
     try {
-      await adminAPI.createUser(form as Parameters<typeof adminAPI.createUser>[0]);
+      await adminAPI.createUser(form);
       toast.success('User created successfully');
       onSuccess();
     } catch (err: unknown) {
