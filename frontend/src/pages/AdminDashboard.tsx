@@ -87,7 +87,7 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [chartData, setChartData] = useState<{ daily_registrations: unknown[]; daily_uploads: unknown[]; file_type_distribution: unknown[] }>({ daily_registrations: [], daily_uploads: [], file_type_distribution: [] });
+  const [chartData, setChartData] = useState<{ daily_registrations: unknown[]; daily_uploads: unknown[]; file_type_distribution: unknown[] }>({ daily_registrations: [], daily_uploads: [], file_type_distribution: {} });
   const [users, setUsers] = useState<User[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
@@ -198,21 +198,21 @@ export default function AdminDashboard() {
 
         <nav className="flex-1 p-4 space-y-1">
           {tabs.map(tab => {
-            const icons = {
+            const icons: Record<string, React.ElementType> = {
               overview: TrendingUp,
               users: Users,
               documents: FileText,
               logs: Activity,
               charts: BarChart3
             };
-            const labels = {
+            const labels: Record<string, string> = {
               overview: 'Overview',
               users: 'Manage Users',
               documents: 'Documents',
               logs: 'Activity Logs',
               charts: 'Analytics'
             };
-            const Icon = icons[tab as keyof typeof icons];
+            const Icon = icons[tab];
             return (
               <button
                 key={tab}
@@ -220,7 +220,7 @@ export default function AdminDashboard() {
                 className={`sidebar-item w-full text-left ${activeTab === tab ? 'active' : ''}`}
               >
                 <Icon className="w-4 h-4" />
-                {labels[tab as keyof typeof labels]}
+                {labels[tab]}
               </button>
             );
           })}
@@ -648,15 +648,24 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     e.preventDefault();
     setLoading(true);
     try {
-      // Ensure role is typed correctly
-      await adminAPI.createUser({
+      // First create the user without password
+      const response = await adminAPI.createUser({
         full_name: form.full_name,
         username: form.username,
         email: form.email,
-        phone: form.phone,
-        password: form.password,
+        phone: form.phone || undefined,
         role: form.role as 'user' | 'admin'
       });
+      
+      // Then set the password using the reset password endpoint
+      // Note: You need to get the user ID from the response
+      // This assumes the response contains the created user with an id
+      const userId = response.data.user?.id || response.data.id;
+      
+      if (userId && form.password) {
+        await adminAPI.resetUserPassword(userId, form.password);
+      }
+      
       toast.success('User created successfully');
       onSuccess();
     } catch (err: unknown) {
@@ -684,7 +693,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm text-vault-text mb-1 block">Full Name</label>
+            <label className="text-sm text-vault-text mb-1 block">Full Name *</label>
             <input
               type="text"
               name="full_name"
@@ -695,7 +704,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             />
           </div>
           <div>
-            <label className="text-sm text-vault-text mb-1 block">Username</label>
+            <label className="text-sm text-vault-text mb-1 block">Username *</label>
             <input
               type="text"
               name="username"
@@ -706,7 +715,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             />
           </div>
           <div>
-            <label className="text-sm text-vault-text mb-1 block">Email</label>
+            <label className="text-sm text-vault-text mb-1 block">Email *</label>
             <input
               type="email"
               name="email"
@@ -727,7 +736,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             />
           </div>
           <div>
-            <label className="text-sm text-vault-text mb-1 block">Password</label>
+            <label className="text-sm text-vault-text mb-1 block">Password *</label>
             <input
               type="password"
               name="password"
@@ -736,6 +745,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               className="input-vault"
               required
             />
+            <p className="text-xs text-vault-text mt-1">Temporary password - user can change after first login</p>
           </div>
           <div>
             <label className="text-sm text-vault-text mb-1 block">Role</label>
