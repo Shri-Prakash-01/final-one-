@@ -6,7 +6,7 @@ import {
   TrendingUp, TrendingDown, RefreshCw, Plus, LogOut,
   User, BarChart3, Trash2, Ban, CheckCircle,
   Search, Clock, Database
-} from 'lucide-react';  // Removed: Download, Settings, AlertTriangle, ChevronRight
+} from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -28,7 +28,7 @@ interface User {
   full_name: string;
   username: string;
   email: string;
-  role: string;
+  role: 'user' | 'admin';
   document_count: number;
   created_at: string;
   is_active: boolean;
@@ -633,27 +633,44 @@ export default function AdminDashboard() {
 }
 
 function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ full_name: '', username: '', email: '', phone: '', password: '', role: 'user'  | 'admin'   });
+  const [form, setForm] = useState({ 
+    full_name: '', 
+    username: '', 
+    email: '', 
+    phone: '', 
+    password: '', 
+    role: 'user' 
+  });
+
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  try {
-    await adminAPI.createUser({
-      ...form,
-      role: form.role as 'user' | 'admin'  // Explicit cast
-    });
-    toast.success('User created successfully');
-    onSuccess();
-  } catch (err: unknown) {
-    const error = err as { response?: { data?: { error?: string } } };
-    toast.error(error?.response?.data?.error || 'Failed to create user');
-  } finally {
-    setLoading(false);
-  }
-};
+    e.preventDefault();
+    setLoading(true);
+    try {
+      // Ensure role is typed correctly
+      await adminAPI.createUser({
+        full_name: form.full_name,
+        username: form.username,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        role: form.role as 'user' | 'admin'
+      });
+      toast.success('User created successfully');
+      onSuccess();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error?.response?.data?.error || 'Failed to create user');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
 
   return (
     <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
@@ -666,26 +683,68 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
           <Plus className="w-5 h-5 text-primary-400" /> Create New User
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {[
-            { name: 'full_name', label: 'Full Name', type: 'text' },
-            { name: 'username', label: 'Username', type: 'text' },
-            { name: 'email', label: 'Email', type: 'email' },
-            { name: 'phone', label: 'Phone', type: 'text' },
-            { name: 'password', label: 'Password', type: 'password' },
-          ].map(field => (
-            <div key={field.name}>
-              <label className="text-sm text-vault-text mb-1 block">{field.label}</label>
-              <input
-                type={field.type}
-                value={(form as Record<string, string>)[field.name]}
-                onChange={e => setForm(p => ({ ...p, [field.name]: e.target.value }))}
-                className="input-vault"
-              />
-            </div>
-          ))}
+          <div>
+            <label className="text-sm text-vault-text mb-1 block">Full Name</label>
+            <input
+              type="text"
+              name="full_name"
+              value={form.full_name}
+              onChange={handleInputChange}
+              className="input-vault"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm text-vault-text mb-1 block">Username</label>
+            <input
+              type="text"
+              name="username"
+              value={form.username}
+              onChange={handleInputChange}
+              className="input-vault"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm text-vault-text mb-1 block">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleInputChange}
+              className="input-vault"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm text-vault-text mb-1 block">Phone</label>
+            <input
+              type="text"
+              name="phone"
+              value={form.phone}
+              onChange={handleInputChange}
+              className="input-vault"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-vault-text mb-1 block">Password</label>
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleInputChange}
+              className="input-vault"
+              required
+            />
+          </div>
           <div>
             <label className="text-sm text-vault-text mb-1 block">Role</label>
-            <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} className="input-vault">
+            <select 
+              name="role"
+              value={form.role} 
+              onChange={handleInputChange} 
+              className="input-vault"
+            >
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
