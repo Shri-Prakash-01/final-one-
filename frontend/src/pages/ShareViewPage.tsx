@@ -1,13 +1,17 @@
+// src/pages/ShareViewPage.tsx
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Shield, Eye, Download, Printer, Lock, FileText, Image, File,
-  AlertTriangle, Clock, Info, User, Smartphone, Monitor
-} from 'lucide-react';
+  Clock, Info, Smartphone, Monitor
+} from 'lucide-react';  // Removed: AlertTriangle, User
 import { shareAPI } from '../lib/api';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
+
+// ... rest of the file remains the same
+
 
 function formatFileSize(bytes: number) {
   if (!bytes) return '0 B';
