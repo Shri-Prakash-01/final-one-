@@ -633,23 +633,27 @@ export default function AdminDashboard() {
 }
 
 function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ full_name: '', username: '', email: '', phone: '', password: '', role: 'user' });
+  const [form, setForm] = useState({ full_name: '', username: '', email: '', phone: '', password: '', role: 'user'  | 'admin'   });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await adminAPI.createUser(form);
-      toast.success('User created successfully');
-      onSuccess();
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error?.response?.data?.error || 'Failed to create user');
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  setLoading(true);
+  try {
+    await adminAPI.createUser({
+      ...form,
+      role: form.role as 'user' | 'admin'  // Explicit cast
+    });
+    toast.success('User created successfully');
+    onSuccess();
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { error?: string } } };
+    toast.error(error?.response?.data?.error || 'Failed to create user');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
