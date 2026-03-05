@@ -6,12 +6,16 @@ import {
   Shield, FileText, Eye, Download, Link2, Upload,
   Search, Copy, Check, Trash2, MoreVertical,
   RefreshCw, AlertTriangle, Clock, Activity, LogOut,
-  User, TrendingUp, Bell
-} from 'lucide-react';  // Removed: Filter, Settings, ChevronDown, FileIcon
+  User, TrendingUp, Bell,
+  Image as ImageIcon,  // Import Image as ImageIcon
+  File                  // Keep File import
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { documentsAPI, type Document, type ActivityLog } from '../lib/api';
 import toast from 'react-hot-toast';
 import { format, formatDistanceToNow } from 'date-fns';
+
+// ... rest of the file remains the same
 
 // ... rest of the file remains the same
 
