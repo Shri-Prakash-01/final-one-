@@ -25,7 +25,7 @@ class Config:
     ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY') or 'encryption-key-32-bytes-long!!'
     
     # CORS settings
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'https://final-one-mu-nine.vercel.app').split(',')
 
 class DevelopmentConfig(Config):
     DEBUG = True
